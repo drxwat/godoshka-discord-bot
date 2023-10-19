@@ -113,6 +113,7 @@ export interface Database {
       scores: {
         Row: {
           created_at: string;
+          guild_id: string;
           id: number;
           module_id: number;
           score: number;
@@ -120,15 +121,17 @@ export interface Database {
           user_name: string;
         };
         Insert: {
-          created_at: string;
+          created_at?: string;
+          guild_id: string;
           id?: number;
           module_id: number;
           score?: number;
-          updated_at: string;
+          updated_at?: string;
           user_name: string;
         };
         Update: {
           created_at?: string;
+          guild_id?: string;
           id?: number;
           module_id?: number;
           score?: number;

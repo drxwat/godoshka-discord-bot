@@ -7,6 +7,10 @@ import {
 import { Command } from "./command";
 import { supabaseClient } from "../supabase/supabase";
 import { Database } from "../supabase/types";
+import { wait } from "../wait";
+
+const CORRECT_POINT = 1.0;
+const TIME_LEFT_BONUS_MULTIPLIER = 0.3;
 
 const popRandom = <T>(array: T[]): T => {
   const index = (array.length * Math.random()) | 0;
@@ -16,6 +20,8 @@ const popRandom = <T>(array: T[]): T => {
 declare type Answer = Database["public"]["Tables"]["answers"]["Row"];
 declare type Question = Database["public"]["Tables"]["questions"]["Row"];
 declare type QuestionWithAnswers = Question & { answers: Answer[] };
+
+const QUESTION_RESPONCES = ["Хммм...", "Любопытно", "Принято", "Ответ принят"];
 
 async function* askQuestions(
   interaction: ChatInputCommandInteraction,
@@ -35,23 +41,34 @@ async function* askQuestions(
         ...answerButtons,
       );
 
+      const startTime = new Date().getTime();
       const response = await interaction.editReply({
         content: question.text,
         components: [buttonRow],
       });
+      const timeToAnswer = question.time_to_answer * 1000;
       try {
         const pressedButton = await response.awaitMessageComponent({
-          time: question.time_to_answer * 1000,
+          time: timeToAnswer,
         });
-        await pressedButton.update({ content: `Ответ принят`, components: [] });
+        const endDateTime = new Date().getTime();
+        await pressedButton.update({
+          content: popRandom([...QUESTION_RESPONCES]),
+          components: [],
+        });
+        await wait(500);
 
         const answer = question.answers.find(
           (answer) => `${answer.id}` === pressedButton.customId,
         );
-        yield answer?.is_correct ?? false;
+        const timeBonus =
+          ((timeToAnswer - (endDateTime - startTime)) / timeToAnswer) *
+          TIME_LEFT_BONUS_MULTIPLIER;
+
+        yield answer?.is_correct ? CORRECT_POINT + timeBonus : 0;
       } catch (error) {
         console.error(error);
-        yield false;
+        yield 0;
       }
     } catch (error) {
       console.error(error);
@@ -91,27 +108,74 @@ class QuizCommand extends Command {
       });
     }
 
+    const { data: scores } = await supabase
+      .from("scores")
+      .select()
+      .filter("module_id", "eq", module.id)
+      .filter("user_name", "eq", interaction.user.globalName)
+      .filter("guild_id", "eq", interaction.guildId);
+    const lastScores = scores && scores[0];
+    const topScoreGreeting = lastScores
+      ? `\nТвой лучший результат ${lastScores.score}`
+      : ``;
+
     const allQuestions = [...module.questions];
     const questions = Array.from({ length: module.quiz_question_amount }, () =>
       popRandom(allQuestions),
     );
 
-    await interaction.reply({
-      content: `${module.name} содержит ${module.quiz_question_amount} вопросов`,
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`yes`)
+        .setLabel("Начать")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`no`)
+        .setLabel("Отмена")
+        .setStyle(ButtonStyle.Secondary),
+    );
+    const response = await interaction.reply({
+      content: `${module.name} содержит ${module.quiz_question_amount} вопросов. Время на ответ ограничено. ${topScoreGreeting}`,
       ephemeral: true,
+      components: [buttonRow],
+    });
+    const pressedButton = await response.awaitMessageComponent({
+      time: 10000,
     });
 
-    const result: boolean[] = [];
-    for await (const isCorrect of askQuestions(interaction, questions)) {
-      result.push(isCorrect);
+    await pressedButton.update({ content: `Так..`, components: [] });
+
+    if (pressedButton.customId === "no") {
+      await pressedButton.deleteReply();
+      return;
     }
 
-    const total = result.reduce((total, isCorrect) => {
-      total += isCorrect ? 1 : 0;
-      return total;
-    }, 0);
+    const result: number[] = [];
+    for await (const points of askQuestions(interaction, questions)) {
+      result.push(points);
+    }
+
+    const total = result.reduce((sum, points) => sum + points, 0);
+
+    if (lastScores && total > lastScores.score) {
+      await supabase.from("scores").update({ id: lastScores.id, score: total });
+    } else if (
+      !lastScores &&
+      interaction.user.globalName &&
+      interaction.guildId
+    ) {
+      await supabase.from("scores").insert([
+        {
+          score: total,
+          user_name: interaction.user.globalName,
+          guild_id: interaction.guildId,
+          module_id: module.id,
+        },
+      ]);
+    }
+
     await interaction.editReply(
-      `${total} верных ответов из ${module.quiz_question_amount} \n Модуль завершен. Ты гигачад ${module.name}`,
+      `${total} верных ответов из ${module.quiz_question_amount} \n Модуль ${module.name} завершен`,
     );
   }
 }
