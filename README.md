@@ -1,0 +1,10 @@
+# .env
+
+DISCORD_APPLICATION_ID=
+DISCORD_PUBLIC_KEY=
+DISCORD_TOKEN=
+DISCORD_GUILD_ID=
+SUPABASE_PROJECT_URL=
+SUPABASE_PUBLIC_KEY=
+
+DISCORD_GUILD_ID is optional. Will deploy commands to specific server if provided
