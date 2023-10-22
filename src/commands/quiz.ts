@@ -155,10 +155,20 @@ class QuizCommand extends Command {
       result.push(points);
     }
 
-    const total = result.reduce((sum, points) => sum + points, 0);
+    const correctAnswers = result
+      .filter((points) => points > 0)
+      .reduce((sum) => sum + 1, 0);
+    const total = parseFloat(
+      result.reduce((sum, points) => sum + points, 0).toFixed(2),
+    );
+
+    console.log("lastScores", lastScores);
 
     if (lastScores && total > lastScores.score) {
-      await supabase.from("scores").update({ id: lastScores.id, score: total });
+      await supabase
+        .from("scores")
+        .update({ score: total })
+        .eq("id", lastScores.id);
     } else if (
       !lastScores &&
       interaction.user.globalName &&
@@ -175,7 +185,17 @@ class QuizCommand extends Command {
     }
 
     await interaction.editReply(
-      `${total} верных ответов из ${module.quiz_question_amount} \n Модуль ${module.name} завершен`,
+      `Твой счет: ${total}
+
+${correctAnswers} верных ответов из ${
+        module.quiz_question_amount
+      } + бонус за скорость: ${(total - correctAnswers).toFixed(2)}
+${
+  total > (lastScores?.score ?? 0)
+    ? `Поздравляю! Это твой новый рекорд в ${module.name}`
+    : `Твой предыдущий рекорд ${lastScores?.score ?? 0}`
+}
+`,
     );
   }
 }
