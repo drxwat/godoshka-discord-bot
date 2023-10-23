@@ -3,6 +3,8 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChatInputCommandInteraction,
+  InteractionEditReplyOptions,
+  bold,
 } from "discord.js";
 import { Command } from "./command";
 import { supabaseClient } from "../supabase/supabase";
@@ -12,10 +14,36 @@ import { wait } from "../wait";
 const CORRECT_POINT = 1.0;
 const TIME_LEFT_BONUS_MULTIPLIER = 0.3;
 
+const shuffleArray = <T>(unshuffled: T[]) => {
+  return unshuffled
+    .map((value) => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+};
+
 const popRandom = <T>(array: T[]): T => {
   const index = (array.length * Math.random()) | 0;
   return array.splice(index, 1)[0];
 };
+
+async function countDown<T>(
+  interaction: ChatInputCommandInteraction,
+  options: InteractionEditReplyOptions,
+  event: Promise<T>,
+  seconds = 15,
+) {
+  for (let i = seconds - 1; i >= 0; i--) {
+    const result = await Promise.race([wait(1000), event]);
+    if (result !== undefined) {
+      return await event;
+    }
+    await interaction.editReply({
+      content: `${bold(options.content ?? "")}\n\nОсталось ${i} секунд`,
+      components: options.components,
+    });
+  }
+  throw new Error("Timeout error");
+}
 
 declare type Answer = Database["public"]["Tables"]["answers"]["Row"];
 declare type Question = Database["public"]["Tables"]["questions"]["Row"];
@@ -30,7 +58,11 @@ async function* askQuestions(
   for (let i = 0; i < questions.length; i++) {
     try {
       const question = questions[i];
-      const answerButtons = question.answers.map((answer) => {
+      const answers =
+        question.answers.length > 2
+          ? shuffleArray(question.answers)
+          : question.answers;
+      const answerButtons = answers.map((answer) => {
         return new ButtonBuilder()
           .setCustomId(`${answer.id}`)
           .setLabel(answer.text)
@@ -43,35 +75,48 @@ async function* askQuestions(
 
       const startTime = new Date().getTime();
       const response = await interaction.editReply({
-        content: question.text,
+        content: `${bold(question.text)}\n\nОсталось ${
+          question.time_to_answer
+        } секунд`,
         components: [buttonRow],
       });
       const timeToAnswer = question.time_to_answer * 1000;
-      try {
-        const pressedButton = await response.awaitMessageComponent({
-          time: timeToAnswer,
-        });
-        const endDateTime = new Date().getTime();
-        await pressedButton.update({
-          content: popRandom([...QUESTION_RESPONCES]),
-          components: [],
-        });
-        await wait(500);
 
-        const answer = question.answers.find(
-          (answer) => `${answer.id}` === pressedButton.customId,
-        );
-        const timeBonus =
-          ((timeToAnswer - (endDateTime - startTime)) / timeToAnswer) *
-          TIME_LEFT_BONUS_MULTIPLIER;
+      const pressedButtonPromise = response.awaitMessageComponent({
+        time: timeToAnswer * 1.5,
+      });
+      const pressedButton = await countDown(
+        interaction,
+        {
+          content: question.text,
+          components: [buttonRow],
+        },
+        pressedButtonPromise,
+        question.time_to_answer,
+      );
 
-        yield answer?.is_correct ? CORRECT_POINT + timeBonus : 0;
-      } catch (error) {
-        console.error(error);
-        yield 0;
-      }
+      const endDateTime = new Date().getTime();
+      await pressedButton.update({
+        content: popRandom([...QUESTION_RESPONCES]),
+        components: [],
+      });
+      await wait(500);
+
+      const answer = answers.find(
+        (answer) => `${answer.id}` === pressedButton.customId,
+      );
+      const timeBonus =
+        ((timeToAnswer - (endDateTime - startTime)) / timeToAnswer) *
+        TIME_LEFT_BONUS_MULTIPLIER;
+
+      yield answer?.is_correct ? CORRECT_POINT + timeBonus : 0;
     } catch (error) {
+      interaction.editReply({
+        content: "Упс. Не получилось",
+        components: [],
+      });
       console.error(error);
+      yield 0;
     }
   }
 }
@@ -135,7 +180,9 @@ class QuizCommand extends Command {
         .setStyle(ButtonStyle.Secondary),
     );
     const response = await interaction.reply({
-      content: `${module.name} содержит ${module.quiz_question_amount} вопросов. Время на ответ ограничено. ${topScoreGreeting}`,
+      content: `${bold(module.name)} содержит ${
+        module.quiz_question_amount
+      } вопросов. \n\nВремя на ответ ограничено. ${topScoreGreeting}`,
       ephemeral: true,
       components: [buttonRow],
     });
