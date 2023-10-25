@@ -125,7 +125,7 @@ export interface Database {
           guild_id: string;
           id?: number;
           module_id: number;
-          score?: number;
+          score: number;
           updated_at?: string;
           user_name: string;
         };
@@ -149,7 +149,26 @@ export interface Database {
       };
     };
     Views: {
-      [_ in never]: never;
+      top_scores: {
+        Row: {
+          created_at: string | null;
+          guild_id: string | null;
+          id: number | null;
+          module_id: number | null;
+          rnum: number | null;
+          score: number | null;
+          updated_at: string | null;
+          user_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "scores_module_id_fkey";
+            columns: ["module_id"];
+            referencedRelation: "modules";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       [_ in never]: never;

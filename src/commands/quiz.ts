@@ -209,8 +209,6 @@ class QuizCommand extends Command {
       result.reduce((sum, points) => sum + points, 0).toFixed(2),
     );
 
-    console.log("lastScores", lastScores);
-
     if (lastScores && total > lastScores.score) {
       await supabase
         .from("scores")
