@@ -18,7 +18,12 @@ class ScoresCommand extends Command {
         value: `${module.id}`,
       }));
 
-    return this.commandBuilder.addStringOption((option) => {
+    const commandBuilder = new SlashCommandBuilder()
+      .setName(this.name)
+      .setDescription(this.description)
+      .setDMPermission(false);
+
+    return commandBuilder.addStringOption((option) => {
       return option
         .setName("module")
         .setDescription("Модуль квиза")

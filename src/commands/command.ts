@@ -6,17 +6,12 @@ export abstract class Command {
   ): Promise<unknown>;
 
   public abstract getData(): Promise<Partial<SlashCommandBuilder>>;
-  public commandBuilder: SlashCommandBuilder;
+  // public commandBuilder: SlashCommandBuilder;
 
   constructor(
-    private name: string,
-    private description: string,
-  ) {
-    this.commandBuilder = new SlashCommandBuilder()
-      .setName(this.name)
-      .setDescription(this.description)
-      .setDMPermission(false);
-  }
+    protected name: string,
+    protected description: string,
+  ) {}
 
   public getName() {
     return this.name;
