@@ -16,6 +16,8 @@ export async function deployCommands({ guildId }: DeployCommandsProps) {
       ),
     );
 
+    console.log("commandsData", commandsData);
+
     if (guildId) {
       console.log(
         `GuildID ${guildId}: started refreshing application (/) commands. `,
