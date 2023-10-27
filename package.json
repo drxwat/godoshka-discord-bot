@@ -10,7 +10,8 @@
     "deploy": "node dist/deploy.js",
     "build": "tsup src/scripts/bot.ts src/scripts/deploy.ts --minify",
     "prepare": "husky install",
-    "gen:types": "export $(cat .env | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID --schema public > src/supabase/types.ts"
+    "gen:types": "export $(cat .env | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID --schema public > src/supabase/types.ts",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.1",

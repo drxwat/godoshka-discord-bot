@@ -37,7 +37,9 @@ export async function deployCommands({ guildId }: DeployCommandsProps) {
       : rest.put(Routes.applicationCommands(config.DISCORD_APPLICATION_ID), {
           body: commandsData,
         });
-    await request;
+
+    const result = await request;
+    console.log(result);
 
     if (guildId) {
       console.log(

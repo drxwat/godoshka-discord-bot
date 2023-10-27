@@ -2,6 +2,11 @@ import { Client, GatewayIntentBits } from "discord.js";
 import { config } from "../config";
 import { commands } from "../commands";
 import { deployCommands } from "../deployCommands";
+import { supabaseClient } from "../supabase/supabase";
+
+/**
+ * LISTEN TO DISCORD EVENTS
+ */
 
 const client = new Client({
   intents: [
@@ -12,7 +17,7 @@ const client = new Client({
 });
 
 client.once("ready", (client) => {
-  console.log(`Ready! Logged in as ${client.user.tag}`);
+  console.log(`Bot is ready. Logged in as ${client.user.tag}`);
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -49,3 +54,26 @@ client.on("guildCreate", async (guild) => {
 });
 
 client.login(config.DISCORD_TOKEN);
+
+/**
+ * LISTEN TO DB CHANGES
+ */
+
+(async () => {
+  const supabase = await supabaseClient;
+
+  supabase
+    .channel("schema-db-changes")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+      },
+      async () => {
+        await deployCommands({ guildId: config.DISCORD_GUILD_ID });
+      },
+    )
+    .subscribe();
+  console.log("Listening to modules changes");
+})();

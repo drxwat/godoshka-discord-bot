@@ -1,8 +1,32 @@
-import { ChatInputCommandInteraction, bold } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  bold,
+} from "discord.js";
 import { Command } from "./command";
 import { supabaseClient } from "../supabase/supabase";
 
 class ScoresCommand extends Command {
+  public async getData(): Promise<Partial<SlashCommandBuilder>> {
+    const supabase = await supabaseClient;
+    const { data: modules } = await supabase.from("modules").select();
+
+    const choises = (modules ?? [])
+      .filter((module) => module.is_published)
+      .map((module) => ({
+        name: module.name,
+        value: `${module.id}`,
+      }));
+
+    return this.commandBuilder.addStringOption((option) => {
+      return option
+        .setName("module")
+        .setDescription("Модуль квиза")
+        .setRequired(true)
+        .addChoices(...choises);
+    });
+  }
+
   public async execute(interaction: ChatInputCommandInteraction) {
     const supabase = await supabaseClient;
     const moduleId = interaction.options.getString("module");
@@ -26,7 +50,7 @@ class ScoresCommand extends Command {
     const { data: topScores } = await supabase
       .from("top_scores")
       .select("*, modules!inner(name)")
-      .order("rnum", { ascending: false })
+      .order("rnum", { ascending: true })
       .filter("module_id", "eq", moduleId)
       .filter("guild_id", "eq", interaction.guildId)
       .limit(6);
@@ -69,23 +93,4 @@ class ScoresCommand extends Command {
 export const scores = new ScoresCommand(
   "scores",
   "Результаты квиза по Godot/Gdscipt",
-  async (data) => {
-    const supabase = await supabaseClient;
-    const { data: modules } = await supabase.from("modules").select();
-
-    const choises = (modules ?? [])
-      .filter((module) => module.is_published)
-      .map((module) => ({
-        name: module.name,
-        value: `${module.id}`,
-      }));
-
-    return data.addStringOption((option) => {
-      return option
-        .setName("module")
-        .setDescription("Модуль квиза")
-        .setRequired(true)
-        .addChoices(...choises);
-    });
-  },
 );

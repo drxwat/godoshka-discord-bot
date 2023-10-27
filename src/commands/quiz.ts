@@ -4,6 +4,7 @@ import {
   ButtonStyle,
   ChatInputCommandInteraction,
   InteractionEditReplyOptions,
+  SlashCommandBuilder,
   bold,
 } from "discord.js";
 import { Command } from "./command";
@@ -122,6 +123,26 @@ async function* askQuestions(
 }
 
 class QuizCommand extends Command {
+  public async getData(): Promise<Partial<SlashCommandBuilder>> {
+    const supabase = await supabaseClient;
+    const { data: modules } = await supabase.from("modules").select();
+
+    const choises = (modules ?? [])
+      .filter((module) => module.is_published)
+      .map((module) => ({
+        name: module.name,
+        value: `${module.id}`,
+      }));
+
+    return this.commandBuilder.addStringOption((option) => {
+      return option
+        .setName("module")
+        .setDescription("Модуль квиза")
+        .setRequired(true)
+        .addChoices(...choises);
+    });
+  }
+
   public async execute(interaction: ChatInputCommandInteraction) {
     const supabase = await supabaseClient;
     const moduleId = interaction.options.getString("module");
@@ -245,26 +266,4 @@ ${
   }
 }
 
-export const quiz = new QuizCommand(
-  "quiz",
-  "Начать квиз по Godot/Gdscipt",
-  async (data) => {
-    const supabase = await supabaseClient;
-    const { data: modules } = await supabase.from("modules").select();
-
-    const choises = (modules ?? [])
-      .filter((module) => module.is_published)
-      .map((module) => ({
-        name: module.name,
-        value: `${module.id}`,
-      }));
-
-    return data.addStringOption((option) => {
-      return option
-        .setName("module")
-        .setDescription("Модуль квиза")
-        .setRequired(true)
-        .addChoices(...choises);
-    });
-  },
-);
+export const quiz = new QuizCommand("quiz", "Начать квиз по Godot/Gdscipt");
