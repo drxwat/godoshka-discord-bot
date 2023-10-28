@@ -228,6 +228,12 @@ class QuizCommand extends Command {
       result.push(points);
     }
 
+    const answerStatuses = questions.map((question, i) => {
+      const isCorrect = result[i] > 0;
+      return `${isCorrect ? ":white_check_mark:" : ":x:"} ${question.text}`;
+    });
+    // :white_check_mark:
+    // :red_x:
     const correctAnswers = result
       .filter((points) => points > 0)
       .reduce((sum) => sum + 1, 0);
@@ -258,9 +264,11 @@ class QuizCommand extends Command {
     await interaction.editReply(
       `Твой счет: ${total}
 
-${correctAnswers} верных ответов из ${
-        module.quiz_question_amount
-      } + бонус за скорость: ${(total - correctAnswers).toFixed(2)}
+${answerStatuses.join("\n")}
+
+Верных ответов: ${correctAnswers} из ${module.quiz_question_amount}
+Бонус за скорость: ${(total - correctAnswers).toFixed(2)}
+
 ${
   total > (lastScores?.score ?? 0)
     ? `Поздравляю! Это твой новый рекорд в ${module.name}`
