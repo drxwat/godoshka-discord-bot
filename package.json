@@ -6,6 +6,7 @@
   "scripts": {
     "dev:bot": "tsx watch src/scripts/bot.ts",
     "dev:deploy": "tsx src/scripts/deploy.ts",
+    "dev:delete": "tsx src/scripts/delete.ts",
     "bot": "node dist/bot.js",
     "deploy": "node dist/deploy.js",
     "build": "tsup src/scripts/bot.ts src/scripts/deploy.ts --minify",
