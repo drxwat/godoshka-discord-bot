@@ -49,9 +49,9 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-// client.on("guildCreate", async (guild) => {
-//   await deployCommands({ guildId: guild.id });
-// });
+client.on("guildCreate", async (guild) => {
+  await deployCommands({ guildId: guild.id });
+});
 
 client.login(config.DISCORD_TOKEN);
 
