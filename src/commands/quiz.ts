@@ -208,7 +208,9 @@ class QuizCommand extends Command {
     const response = await interaction.reply({
       content: `${bold(module.name)} содержит ${
         module.quiz_question_amount
-      } вопросов. \n\nВремя на ответ ограничено. ${topScoreGreeting}`,
+      } вопросов. \n\nВремя на ответ ограничено. ${topScoreGreeting} \n\n ${bold(
+        "Бот работает в тестовом режиме. Любой фидбэк приветствуется",
+      )}`,
       ephemeral: true,
       components: [buttonRow],
     });

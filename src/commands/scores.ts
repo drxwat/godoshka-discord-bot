@@ -90,7 +90,7 @@ class ScoresCommand extends Command {
 
     return interaction.reply({
       content: leaderBoard,
-      ephemeral: true,
+      // ephemeral: true,
     });
   }
 }
