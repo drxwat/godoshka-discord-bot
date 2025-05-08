@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({
+  override: true,
+});
 
 const {
   DISCORD_APPLICATION_ID,
