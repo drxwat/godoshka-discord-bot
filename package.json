@@ -10,6 +10,7 @@
     "bot": "node dist/bot.js",
     "deploy": "node dist/deploy.js",
     "build": "tsup src/scripts/bot.ts src/scripts/deploy.ts --minify",
+    "lint-staged": "lint-staged",
     "prepare": "husky install",
     "gen:types": "export $(cat .env | xargs) && npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID --schema public > src/supabase/types.ts",
     "postinstall": "npm run build"
