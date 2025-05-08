@@ -1,8 +1,13 @@
 import { Client, GatewayIntentBits } from "discord.js";
-import { config } from "../config";
 import { commands } from "../commands";
+import { config } from "../config";
 import { deployCommands } from "../deployCommands";
+import { handleGameJamMessageCreate } from "../handlers/handleGameJamMessageCreate";
 import { supabaseClient } from "../supabase/supabase";
+import { format } from "date-fns";
+import { UTCDate } from "@date-fns/utc";
+import { Jam } from "../supabase/entities";
+import { handleQuestionMessageCreate } from "../handlers/handleQuestionMessageCreate";
 
 /**
  * LISTEN TO DISCORD EVENTS
@@ -13,11 +18,24 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
-client.once("ready", (client) => {
+let jams: Jam[] = [];
+
+client.once("ready", async (client) => {
   console.log(`Bot is ready. Logged in as ${client.user.tag}`);
+
+  const supabase = await supabaseClient;
+  const { data } = await supabase
+    .from("jams")
+    .select("*")
+    .gt("end_timestamp", format(new UTCDate(), "yyyy-MM-dd'T'kk:mm:ss"));
+
+  if (data) {
+    jams = data;
+  }
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -34,6 +52,7 @@ client.on("interactionCreate", async (interaction) => {
 
   try {
     await command.execute(interaction);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
@@ -47,6 +66,16 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
   }
+});
+
+client.on("messageCreate", (message) => {
+  console.log("message", message);
+
+  if (jams) {
+    handleGameJamMessageCreate(message, jams);
+  }
+
+  handleQuestionMessageCreate(message, client);
 });
 
 client.on("guildCreate", async (guild) => {
@@ -69,11 +98,22 @@ client.login(config.DISCORD_TOKEN);
       {
         event: "*",
         schema: "public",
+        table: "jams",
       },
       async () => {
-        await deployCommands({ guildId: config.DISCORD_GUILD_ID });
+        console.log("Jams change event");
+        const { data } = await supabase
+          .from("jams")
+          .select("*")
+          .gt("end_timestamp", format(new UTCDate(), "yyyy-MM-dd'T'kk:mm:ss"));
+
+        if (data) {
+          console.log("Jams data updated");
+          jams = data;
+        }
+        // await deployCommands({ guildId: config.DISCORD_GUILD_ID });
       },
     )
     .subscribe();
-  console.log("Listening to modules changes");
+  console.log("Listening to jams change");
 })();

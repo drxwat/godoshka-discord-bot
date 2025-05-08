@@ -13,6 +13,7 @@ export const supabaseClient: Promise<SupabaseClient<Database>> = new Promise(
         email: config.SUPABASE_USER,
         password: config.SUPABASE_PASSWORD,
       })
-      .then(() => resolve(client));
+      .then(() => resolve(client))
+      .catch((err) => console.error(err));
   },
 );

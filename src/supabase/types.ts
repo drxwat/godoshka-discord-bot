@@ -6,169 +6,80 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
-      answers: {
+      jam_devlogs: {
         Row: {
+          attachment_url: string | null;
+          content: string;
           created_at: string;
-          id: number;
-          is_correct: boolean;
-          question_id: number;
-          text: string;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          is_correct?: boolean;
-          question_id: number;
-          text: string;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          is_correct?: boolean;
-          question_id?: number;
-          text?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "answers_question_id_fkey";
-            columns: ["question_id"];
-            referencedRelation: "questions";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      modules: {
-        Row: {
-          created_at: string;
-          description: string | null;
-          id: number;
-          is_published: boolean;
-          min_questions: number;
-          name: string;
-          quiz_question_amount: number;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          is_published?: boolean;
-          min_questions?: number;
-          name: string;
-          quiz_question_amount?: number;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          description?: string | null;
-          id?: number;
-          is_published?: boolean;
-          min_questions?: number;
-          name?: string;
-          quiz_question_amount?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      questions: {
-        Row: {
-          created_at: string;
-          id: number;
-          module_id: number;
-          text: string;
-          time_to_answer: number;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          module_id: number;
-          text: string;
-          time_to_answer?: number;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          module_id?: number;
-          text?: string;
-          time_to_answer?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "questions_module_id_fkey";
-            columns: ["module_id"];
-            referencedRelation: "modules";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      scores: {
-        Row: {
-          created_at: string;
-          guild_id: string;
-          id: number;
-          module_id: number;
-          score: number;
-          updated_at: string;
+          id: string;
+          jam_id: string;
           user_name: string;
         };
         Insert: {
+          attachment_url?: string | null;
+          content: string;
           created_at?: string;
-          guild_id: string;
-          id?: number;
-          module_id: number;
-          score: number;
-          updated_at?: string;
+          id?: string;
+          jam_id: string;
           user_name: string;
         };
         Update: {
+          attachment_url?: string | null;
+          content?: string;
           created_at?: string;
-          guild_id?: string;
-          id?: number;
-          module_id?: number;
-          score?: number;
-          updated_at?: string;
+          id?: string;
+          jam_id?: string;
           user_name?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "scores_module_id_fkey";
-            columns: ["module_id"];
-            referencedRelation: "modules";
+            foreignKeyName: "jam_devlogs_jam_id_fkey";
+            columns: ["jam_id"];
+            isOneToOne: false;
+            referencedRelation: "jams";
             referencedColumns: ["id"];
           },
         ];
+      };
+      jams: {
+        Row: {
+          created_at: string;
+          end_timestamp: string;
+          id: string;
+          name: string;
+          number: number;
+          start_timestamp: string;
+          tag: string | null;
+          type: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          end_timestamp: string;
+          id?: string;
+          name: string;
+          number: number;
+          start_timestamp: string;
+          tag?: string | null;
+          type?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          end_timestamp: string;
+          id?: string;
+          name?: string;
+          number?: number;
+          start_timestamp: string;
+          tag?: string | null;
+          type?: string | null;
+        };
+        Relationships: [];
       };
     };
     Views: {
-      top_scores: {
-        Row: {
-          created_at: string | null;
-          guild_id: string | null;
-          id: number | null;
-          module_id: number | null;
-          rnum: number | null;
-          score: number | null;
-          updated_at: string | null;
-          user_name: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "scores_module_id_fkey";
-            columns: ["module_id"];
-            referencedRelation: "modules";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+      [_ in never]: never;
     };
     Functions: {
       [_ in never]: never;
@@ -180,4 +91,115 @@ export interface Database {
       [_ in never]: never;
     };
   };
-}
+};
+
+type DefaultSchema = Database[Extract<keyof Database, "public">];
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never;
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const;

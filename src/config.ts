@@ -11,6 +11,8 @@ const {
   SUPABASE_PUBLIC_KEY,
   SUPABASE_USER,
   SUPABASE_PASSWORD,
+  LLM_BASE_URL,
+  LLM_API_KEY,
 } = process.env;
 
 if (
@@ -20,7 +22,9 @@ if (
   !SUPABASE_PROJECT_URL ||
   !SUPABASE_PUBLIC_KEY ||
   !SUPABASE_USER ||
-  !SUPABASE_PASSWORD
+  !SUPABASE_PASSWORD ||
+  !LLM_BASE_URL ||
+  !LLM_API_KEY
 ) {
   throw new Error("Missing environment variables");
 }
@@ -34,4 +38,6 @@ export const config = {
   SUPABASE_PUBLIC_KEY,
   SUPABASE_USER,
   SUPABASE_PASSWORD,
+  LLM_BASE_URL,
+  LLM_API_KEY,
 };
