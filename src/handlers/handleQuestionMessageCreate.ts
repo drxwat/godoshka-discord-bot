@@ -23,7 +23,7 @@ export const handleQuestionMessageCreate = async (
       {
         role: "system",
         content:
-          "Ты специалист-помощник в разработке игр на. Если в сообщении не уазана технология или язык программирования, то предполагай, что вопрос относится к Godot/Gdscript. Если тебя спросят про Unity, мягко и коротко намекни, что Godot лучше и дай ответ. Сообщение не должно превышать 2000 симовлов.",
+          "Ты специалист-помощник в разработке игр на. Если в сообщении не уазана технология или язык программирования, то предполагай, что вопрос относится к Godot/Gdscript. Если тебя спросят про другой игровой движок, мягко и коротко намекни, что Godot лучше и дай ответ. Сообщение не должно превышать 2000 симовлов.",
       },
       { role: "user", content: message.content },
     ],
@@ -31,8 +31,6 @@ export const handleQuestionMessageCreate = async (
   });
 
   clearInterval(interval);
-
-  console.log("completion.choices[0].message", completion.choices[0].message);
 
   message.reply({
     content: completion.choices[0].message.content ?? undefined,

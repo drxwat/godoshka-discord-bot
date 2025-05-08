@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Client, GatewayIntentBits } from "discord.js";
 import { commands } from "../commands";
 import { config } from "../config";
@@ -52,7 +53,6 @@ client.on("interactionCreate", async (interaction) => {
 
   try {
     await command.execute(interaction);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
@@ -69,11 +69,9 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.on("messageCreate", (message) => {
-  console.log("message", message);
-
-  if (jams) {
-    handleGameJamMessageCreate(message, jams);
-  }
+  // if (jams) {
+  //   handleGameJamMessageCreate(message, jams);
+  // }
 
   handleQuestionMessageCreate(message, client);
 });
