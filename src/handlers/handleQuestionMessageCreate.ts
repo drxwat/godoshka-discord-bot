@@ -2,7 +2,7 @@ import { Client, Message, OmitPartialGroupDMChannel } from "discord.js";
 import { LLM } from "../llm";
 import { ChatCompletionMessageParam } from "openai/resources/chat";
 
-const MAX_REFERENCE = 3;
+// const MAX_REFERENCE = 3;
 
 export const handleQuestionMessageCreate = async (
   message: OmitPartialGroupDMChannel<Message<boolean>>,
@@ -28,24 +28,24 @@ export const handleQuestionMessageCreate = async (
     },
   ];
 
-  const refMessages: ChatCompletionMessageParam[] = [];
-  let refMessage = message;
-  for (let i = 0; i <= MAX_REFERENCE; i++) {
-    if (refMessage.reference) {
-      const reference = await refMessage.fetchReference();
+  // const refMessages: ChatCompletionMessageParam[] = [];
+  // let refMessage = message;
+  // for (let i = 0; i <= MAX_REFERENCE; i++) {
+  //   if (refMessage.reference) {
+  //     const reference = await refMessage.fetchReference();
 
-      refMessages.push({
-        role: reference.author.id === botUserId ? "assistant" : "user",
-        content: reference.content,
-      });
+  //     refMessages.push({
+  //       role: reference.author.id === botUserId ? "assistant" : "user",
+  //       content: reference.content,
+  //     });
 
-      refMessage = reference;
-    } else {
-      break;
-    }
-  }
-  refMessages.reverse();
-  messages.push(...refMessages);
+  //     refMessage = reference;
+  //   } else {
+  //     break;
+  //   }
+  // }
+  // refMessages.reverse();
+  // messages.push(...refMessages);
 
   messages.push({ role: "user", content: message.content });
 
