@@ -23,7 +23,7 @@ export const handleGameJamMessageCreate = async (
     return;
   }
 
-  console.log("activeJam", activeJam);
+  console.log("jam", activeJam);
 
   const supabase = await supabaseClient;
 
