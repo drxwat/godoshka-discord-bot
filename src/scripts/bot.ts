@@ -73,6 +73,10 @@ client.on("messageCreate", (message) => {
   //   handleGameJamMessageCreate(message, jams);
   // }
 
+  if (message.author.id === client.user?.id) {
+    return;
+  }
+
   handleQuestionMessageCreate(message, client);
 });
 
