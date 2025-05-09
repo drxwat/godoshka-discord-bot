@@ -1,6 +1,7 @@
 import { Client, Message, OmitPartialGroupDMChannel } from "discord.js";
 import { LLM } from "../llm";
 import { ChatCompletionMessageParam } from "openai/resources/chat";
+import { config } from "../config";
 
 const MAX_REFERENCE = 3;
 
@@ -50,7 +51,7 @@ export const handleQuestionMessageCreate = async (
   messages.push({ role: "user", content: message.content });
 
   const completion = await LLM.chat.completions.create({
-    model: "deepseek-chat",
+    model: config.LLM_MODEL,
     messages,
     stream: false,
   });
